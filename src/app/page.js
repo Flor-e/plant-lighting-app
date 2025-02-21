@@ -1,95 +1,43 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client"; // This tells Next.js to run this on the browser, not the server
+
+import { useState, useEffect } from 'react';
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.js</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [lightLevel, setLightLevel] = useState('Unknown'); // Store the light reading
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  useEffect(() => {
+    // Check if the browser supports the light sensor
+    if ('AmbientLightSensor' in window) {
+      try {
+        const sensor = new AmbientLightSensor();
+        sensor.onreading = () => {
+          const lux = sensor.illuminance; // Light level in lux
+          let lightType;
+          if (lux > 10000) {
+            lightType = 'Direct Sunlight';
+          } else if (lux > 100) {
+            lightType = 'Indirect Light';
+          } else {
+            lightType = 'Shade';
+          }
+          setLightLevel(`${lightType} (${lux} lux)`);
+        };
+        sensor.onerror = (event) => {
+          setLightLevel('Error: Could not access light sensor');
+        };
+        sensor.start(); // Start the sensor
+      } catch (error) {
+        setLightLevel('Error: Sensor not supported or permission denied');
+      }
+    } else {
+      setLightLevel('Sorry, your device doesn’t support the light sensor');
+    }
+  }, []); // Empty array means this runs once when the page loads
+
+  return (
+    <div style={{ textAlign: 'center', padding: '20px' }}>
+      <h1>Plant Lighting App</h1>
+      <p>Light Level: {lightLevel}</p>
     </div>
   );
 }
